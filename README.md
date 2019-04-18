@@ -12,6 +12,11 @@ Then download the files:
 
 `download.py` implements a filter in Python to delete files which do not match a given criteria. Right now it's an example that has an RTF filter, but feel free to add whatever filter you dream of.
 
+# Cool features
+
+- It downloads things in parallel.
+- It cycles through market codes, allowing for getting non-local-locale input files, which is great for getting good unicode inputs, which usually helps stress localization code in target software
+
 # Example
 
 ```
