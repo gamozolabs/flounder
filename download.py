@@ -39,9 +39,13 @@ def download_url(url):
     # isn't perfect, especially with PHP pages with dynamic downloads based
     # on GET/POST data
 
-    # Nuke the file if it doesn't start with {\rtf
     try:
-        if not open(file_path, "rb").read(8).startswith(b'{\\rtf'):
+        # Nuke the file if it doesn't start with {\rtf
+        #if not open(file_path, "rb").read(8).startswith(b'{\\rtf'):
+        #    os.remove(file_path)
+        
+        # Nuke the file if it's not a png
+        if not open(file_path, "rb").read(8).startswith(b'\x89\x50\x4e\x47\x0d\x0a\x1a\x0a'):
             os.remove(file_path)
     except:
         pass
@@ -59,7 +63,7 @@ def fetch_files():
     global remain
 
     da_urls = load_bing_cache()
-    print("Bing cache loaded")
+    print("Bing cache loaded, %d entries" % len(da_urls))
 
     #print len(set(da_urls))
     #for url in da_urls:

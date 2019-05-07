@@ -46,17 +46,33 @@ market_codes = [
     "es-US",
 ]
 
-if len(sys.argv) != 3:
-    print("Usage: flounder.py <bing subscription key> <search query>\nFor example: flounder.py BINGKEYHERE \"filetype:rtf\"")
+if len(sys.argv) < 3:
+    print("""
+Usage:
+    For non-image files: flounder.py <bing subscription key> <search query>
+    For image files:     flounder.py <bing subscription key> <search query> --imagesearch=<image file type>
+
+For example: flounder.py BINGKEYHERE \"filetype:rtf\"
+For searching for images: flounder.py BINGKEYHERE bananas --imagesearch=png
+""")
     quit()
 
 subscription_key = sys.argv[1]
+
+image_search = None
+if len(sys.argv) == 4:
+    assert sys.argv[3].startswith("--imagesearch=")
+    image_search = sys.argv[3].split("--imagesearch=", maxsplit=1)[1]
 
 url_log = open("urllog_%s.txt" % time.time(), "wb")
 
 for offset in range(0, 1000000, 50):
     for market in market_codes:
-        search_url = "https://api.cognitive.microsoft.com/bing/v7.0/search?count=50&mkt=%s&offset=%d" % (market, offset)
+        if image_search == None:
+            search_url = "https://api.cognitive.microsoft.com/bing/v7.0/search?count=50&mkt=%s&offset=%d" % (market, offset)
+        else:
+            search_url = "https://api.cognitive.microsoft.com/bing/v7.0/images/search?count=50&mkt=%s&offset=%d" % (market, offset)
+
         search_term = sys.argv[2] # Example: "some keywords filetype:rtf"
 
         headers = {"Ocp-Apim-Subscription-Key" : subscription_key}
@@ -65,14 +81,22 @@ for offset in range(0, 1000000, 50):
         response.raise_for_status()
         search_results = response.json()
 
-        assert search_results["_type"] == "SearchResponse"
-
         #print(json.dumps(search_results, indent=4, sort_keys=True))
 
-        for result in search_results["webPages"]["value"]:
-            print(result["url"])
-            url_log.write(result["url"].encode() + b"738ced42e85db6ed9095b29dc94b9253")
-            url_log.flush()
+        if search_results["_type"] == "SearchResponse":
+            for result in search_results["webPages"]["value"]:
+                print(result["url"])
+                url_log.write(result["url"].encode() + b"738ced42e85db6ed9095b29dc94b9253")
+                url_log.flush()
 
-        time.sleep(0.5)
+            time.sleep(0.5)
+        elif search_results["_type"] == "Images":
+            for result in search_results["value"]:
+                # Filter to only save images of the type requested
+                if "encodingFormat" in result and result["encodingFormat"] == image_search:
+                    print(result["contentUrl"])
+                    url_log.write(result["contentUrl"].encode() + b"738ced42e85db6ed9095b29dc94b9253")
+                    url_log.flush()
+        else:
+            assert 1==2, "Unexpected search result type"
 
